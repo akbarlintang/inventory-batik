@@ -13,7 +13,7 @@
 
 <div class="pt-5">
     <div class="container">
-        <h1>Daftar Produk</h1>
+        <h1>Daftar Resep {{ product.name }}</h1>
 
         <!-- blok untuk menampilkan notifikasi pesan sukses -->
         <div>
@@ -32,7 +32,7 @@
         </div>
 
         <div class="text-right">
-            <a href="{% url 'product.create' %}" class="btn btn-success">Tambah Baru</a>
+            <a href="{% url 'product.recipe.create' product.id %}" class="btn btn-success">Tambah Baru</a>
         </div>
 
         <br>
@@ -43,7 +43,7 @@
                     <th width="5%" class="text-center">ID</th>
                     <th class="text-center">Kode Item</th>
                     <th class="text-center">Nama</th>
-                    <th class="text-center">Deskripsi</th>
+                    <th class="text-center">Kuantitas</th>
                     <th class="text-center">Harga</th>
                     <th class="text-center">Aksi</th>
                 </tr>
@@ -54,12 +54,12 @@
                 {% for item in items %}
                 <tr>
                     <td class="text-center">{{ forloop.counter }}</td>
-                    <td>{{ item.code }}</td>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.description }}</td>
-                    <td class="text-right">Rp {{ item.price }}</td>
+                    <td>{{ item.material.code }}</td>
+                    <td>{{ item.material.name }}</td>
+                    <td class="text-right">{{ item.amount }} {{ item.material.unit }}</td>
+                    <td class="text-right">Rp {{ item.material.price }}</td>
                     <td class="text-center">
-                        <a href="{% url 'product.recipe.index' item.id %}" class="btn btn-primary btn-sm"><i class="fa fa-file"></i></a>
+                        <a href="{% url 'product.update' item.id %}" class="btn btn-primary btn-sm"><i class="fa fa-file"></i></a>
                         <a href="{% url 'product.update' item.id %}" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></a>
                         <a href="{% url 'product.delete' item.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Apakah yakin akan menghapus item ini?')"><i class="fa fa-trash"></i></a>
                     </td>

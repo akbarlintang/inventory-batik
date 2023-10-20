@@ -38,17 +38,21 @@ urlpatterns = [
     path('outlet/select/<outlet_id>', outlet_select_view, name='outlet.select'),
     path('outlet/get', outlet_get_view, name='outlet.get'),
 
-    # Item
-    path('item/', item_view, name='item.index'),
-    path('item/create', item_create_view, name='item.create'),
-    path('item/update/<int:item_id>', item_update_view, name='item.update'),
-    path('item/delete/<int:item_id>', item_delete_view, name='item.delete'),
+    # Material
+    path('material/', material_view, name='material.index'),
+    path('material/create', material_create_view, name='material.create'),
+    path('material/update/<int:material_id>', material_update_view, name='material.update'),
+    path('material/delete/<int:material_id>', material_delete_view, name='material.delete'),
 
     # Product
     path('product/', product_view, name='product.index'),
     path('product/create', product_create_view, name='product.create'),
     path('product/update/<int:product_id>', product_update_view, name='product.update'),
     path('product/delete/<int:product_id>', product_delete_view, name='product.delete'),
+
+    # Product recipe
+    path('product/recipe/<int:product_id>', product_recipe_view, name='product.recipe.index'),
+    path('product/recipe/create/<int:product_id>', product_recipe_create_view, name='product.recipe.create'),
 
     # Purchase
     path('purchase/', purchase_view, name='purchase.index'),

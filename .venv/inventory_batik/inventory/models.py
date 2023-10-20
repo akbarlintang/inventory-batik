@@ -30,6 +30,24 @@ class Item(models.Model):
 
     def __str__(self):
         return '%s' % self.name
+    
+class Material(models.Model):
+    code = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    image = models.ImageField(upload_to="img/items/", null=True, blank=True)
+    description = models.TextField()
+    price = models.IntegerField()
+    biaya_pesan = models.IntegerField(default=None, null=True)
+    lead_time = models.IntegerField(default=None, null=True)
+    unit = models.CharField(max_length=255, choices=UnitTypes.choices(), default=UnitTypes.KG)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'materials'
+
+    def __str__(self):
+        return '%s' % self.name
 
 class Purchase(models.Model):
     outlet = models.ForeignKey(Outlet, on_delete=models.CASCADE)
@@ -86,3 +104,15 @@ class Transaction(models.Model):
 
     class Meta:
         db_table = 'transactions'
+
+class Recipe(models.Model):
+    outlet = models.ForeignKey(Outlet, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    material = models.ForeignKey(Material, on_delete=models.CASCADE)
+    amount = models.IntegerField()
+    unit = models.CharField(max_length=255, choices=UnitTypes.choices(), default=UnitTypes.KG)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'recipes'

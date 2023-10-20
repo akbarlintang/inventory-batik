@@ -141,61 +141,61 @@ def outlet_get_view(request):
     
     return HttpResponse(data, content_type="text/json-comment-filtered")
 
-# Item
-def item_view(request):
-    items = Item.objects.filter(type="MENTAH")
+# Material
+def material_view(request):
+    materials = Material.objects.all()
     context = {
-        'items': items
+        'materials': materials
     }
 
-    return render(request, 'item/index.html', context)
+    return render(request, 'material/index.html', context)
 
-def item_create_view(request):
+def material_create_view(request):
     # Mengecek method pada request
     # Jika method-nya adalah POST, maka akan dijalankan
     # proses validasi dan penyimpanan data
     if request.method == 'POST':
         # membuat objek dari class TaskForm
-        form = ItemForm(request.POST, request.FILES)
+        form = MaterialForm(request.POST, request.FILES)
         # Mengecek validasi form
         if form.is_valid():
             # Membuat Task baru dengan data yang disubmit
-            new_task = ItemForm(request.POST, request.FILES)
+            new_task = MaterialForm(request.POST, request.FILES)
             # Simpan data ke dalam table tasks
             new_task.save()
             # mengeset pesan sukses dan redirect ke halaman daftar task
-            messages.success(request, 'Sukses Menambah Item baru.')
-            return redirect('item.index')
+            messages.success(request, 'Sukses Menambah Material baru.')
+            return redirect('material.index')
     # Jika method-nya bukan POST
     else:
         # membuat objek dari class TaskForm
-        form = ItemForm()
+        form = MaterialForm()
     # merender template form dengan memparsing data form
-    return render(request, 'item/form.html', {'form': form})
+    return render(request, 'material/form.html', {'form': form})
 
-def item_update_view(request, item_id):
+def material_update_view(request, material_id):
     try:
-        item = Item.objects.get(pk=item_id)
-    except Item.DoesNotExist:
-        raise Http404("Item tidak ditemukan.")
+        material = Material.objects.get(pk=material_id)
+    except Material.DoesNotExist:
+        raise Http404("Material tidak ditemukan.")
     if request.method == 'POST':
-        form = ItemForm(request.POST, request.FILES, instance=item)
+        form = MaterialForm(request.POST, request.FILES, instance=material)
         if form.is_valid():
             form.save()
             messages.success(request, 'Sukses Mengubah Item.')
-            return redirect('item.index')
+            return redirect('material.index')
     else:
-        form = ItemForm(instance=item)
-    return render(request, 'item/form.html', {'form': form})
+        form = MaterialForm(instance=material)
+    return render(request, 'material/form.html', {'form': form})
 
-def item_delete_view(request, item_id):
+def material_delete_view(request, material_id):
     try:
-        item = Item.objects.get(pk=item_id)
-        item.delete()
-        messages.success(request, 'Sukses Menghapus Item.')
-        return redirect('item.index')
-    except Item.DoesNotExist:
-        raise Http404("Item tidak ditemukan.")
+        material = Material.objects.get(pk=material_id)
+        material.delete()
+        messages.success(request, 'Sukses Menghapus Material.')
+        return redirect('material.index')
+    except Material.DoesNotExist:
+        raise Http404("Material tidak ditemukan.")
     
 # Product
 def product_view(request):
@@ -252,6 +252,41 @@ def product_delete_view(request, product_id):
         return redirect('product.index')
     except Item.DoesNotExist:
         raise Http404("Item tidak ditemukan.")
+    
+# Product recipe
+def product_recipe_view(request, product_id):
+    items = Recipe.objects.filter(item_id=product_id)
+    product = Item.objects.get(pk=product_id)
+    context = {
+        'items': items,
+        'product': product
+    }
+
+    return render(request, 'product_recipe/index.html', context)
+
+def product_recipe_create_view(request, product_id):
+    # Mengecek method pada request
+    # Jika method-nya adalah POST, maka akan dijalankan
+    # proses validasi dan penyimpanan data
+    if request.method == 'POST':
+        # membuat objek dari class TaskForm
+        form = RecipeForm(request.POST, request.FILES)
+        # Mengecek validasi form
+        if form.is_valid():
+            # Membuat Task baru dengan data yang disubmit
+            new_task = form.save(commit=False)
+            new_task.item_id = product_id
+            # Simpan data ke dalam table tasks
+            new_task.save()
+            # mengeset pesan sukses dan redirect ke halaman daftar task
+            messages.success(request, 'Sukses Menambah Resep baru.')
+            return redirect('product.recipe.index', product_id)
+    # Jika method-nya bukan POST
+    else:
+        # membuat objek dari class TaskForm
+        form = RecipeForm()
+    # merender template form dengan memparsing data form
+    return render(request, 'product_recipe/form.html', {'form': form, 'product_id': product_id})
 
 # Purchase
 def purchase_view(request):
@@ -530,15 +565,19 @@ def export_view(request):
                 sales_count += sale.amount
                 sales_list.append(sale.amount)
 
-            biaya_kekurangan = (item.price * 7.5 / 100) + item.price
             n = len(sales_list)
             if n < 2:
-                standar_deviasi = sales_list[0]
+                if not sales:
+                    standar_deviasi = 1
+                else:
+                    standar_deviasi = sales[0].amount
             else:
-                standar_deviasi = stdev(sales_list)
-            
+                standar_deviasi = np.std(sales_list)
+
+            biaya_kekurangan = (item.price * 7.5 / 100) + item.price
+
             # Write row excel
-            row = [idx+1, item.name, item.biaya_pesan, sales_count, 225805, biaya_kekurangan, item.price, item.lead_time, standar_deviasi]
+            row = [idx+1, item.name, item.biaya_pesan, sales_count, 200000, biaya_kekurangan, item.price, item.lead_time, standar_deviasi]
             writer.writerow(row)
         return response
     
@@ -549,6 +588,33 @@ def export_view(request):
     return render(request, 'export/index.html', context)
 
 # Periodic Review
+def calculate_inventory_cost(product, to):
+    A = product["biaya_pesan"]
+    D = product["permintaan_baku"] / 5
+    vr = product["biaya_simpan"] / 5
+    B3 = product["biaya_kekurangan"]
+    L = product["lead_time"]
+    Std = product["standar_deviasi"]
+    k = round(vr / (vr + B3), 2)
+    sigma_RL = (to + L) * Std
+
+    # Mencari Q
+    Q = math.sqrt((2 * A * D) / vr)
+
+    # Mencari total biaya pesan
+    biaya_pesan = (A * D) / Q
+
+    # Mencari total biaya simpan
+    biaya_simpan = ((Q / 2) + (k * sigma_RL) * vr)
+
+    # Mencari total biaya kekurangan
+    biaya_kekurangan = (B3 * sigma_RL * 0.216 * D) / Q
+
+    # Hitung ongkos total dan masukkan ke dalam list
+    ongkos_total = biaya_pesan + biaya_simpan + biaya_kekurangan
+    
+    return ongkos_total
+
 def periodic_view(request):
     if request.method == 'POST':
         array = []
@@ -671,9 +737,9 @@ def periodic_view(request):
                 # Hitung nilai To
                 to = math.sqrt((2 * biaya_pesan) / (permintaan_baku * biaya_simpan))
 
-                To = round(to * 100)
+                # To = round(to * 100)
 
-                return To
+                return to
 
             def func2(x):
                 T_temp = []
@@ -799,17 +865,67 @@ def periodic_view(request):
 
                 return S_temp[index]
             
+            def find_ss(x):
+                # Hitung nilai To
+                to = min_to
+
+                # Hitung nilai alpha dan R
+                alpha = to * biaya_simpan / biaya_kekurangan
+                z_alpha = round((NormalDist().inv_cdf(alpha) * -1), 2)
+
+                fz_alpha = round(norm.pdf(2.22 , loc = 0 , scale = 1 ), 5)
+                # wz_alpha = fz_alpha - (z_alpha * (1 - fz_alpha))
+                wz_alpha = round((fz_alpha - 0.00001), 5)
+
+                R = round((permintaan_baku * to) + (permintaan_baku * lead_time) + (z_alpha * (math.sqrt(to + lead_time))))
+
+                # Hitung total biaya total persediaan
+                N = math.ceil(standar_deviasi * ((math.sqrt(to + lead_time)) * ((fz_alpha - (z_alpha * wz_alpha)) * -1)))
+
+                T = (permintaan_baku * harga_material) + (biaya_pesan / to) + (biaya_simpan * (R - (permintaan_baku * lead_time) + (permintaan_baku * to / 2))) + (biaya_kekurangan / to * N)
+
+                # Hitung nilai XR, XRL, dan sigma_RL
+                XR = to * permintaan_baku
+                XRL = (to + lead_time) * permintaan_baku
+                sigma_RL = (to + lead_time) * standar_deviasi
+
+                Qp = round(1.3 * (XR ** 0.494) * ((biaya_pesan / biaya_simpan) ** 0.506) * ((1 + ((sigma_RL ** 2) / (XR ** 2))) ** 0.116))
+                z = math.sqrt((Qp * biaya_simpan) / (sigma_RL * biaya_kekurangan))
+                if z <= 0:
+                    Sp = round((0.973 * XRL) + (sigma_RL * ((0.183 / 1) + 1.063 - (2.192 * z))), 2)
+                else:
+                    Sp = round((0.973 * XRL) + (sigma_RL * ((0.183 / z) + 1.063 - (2.192 * z))), 2)
+
+                k = round(biaya_simpan / (biaya_simpan + biaya_kekurangan), 2)
+
+                So = round(XRL + (k * sigma_RL))
+
+                s = round(Sp)
+                S = round(Sp + Qp)
+
+                return s, S
+            
             initial=[0,0]               # initial starting location [x1,x2...]
             bounds=[(-10,10),(-10,10)]  # input bounds [(x1_min,x1_max),(x2_min,x2_max)...]
-            to = PSO(func1,initial,bounds,num_particles=15,maxiter=30)
-            s = PSO(func2,initial,bounds,num_particles=15,maxiter=30)
-            S = PSO(func3,initial,bounds,num_particles=15,maxiter=30)
+            min_to = PSO(func1,initial,bounds,num_particles=15,maxiter=30)
+            # s = PSO(func2,initial,bounds,num_particles=15,maxiter=30)
+            # S = PSO(func3,initial,bounds,num_particles=15,maxiter=30)
+
+            s, S = find_ss(x)
+            To = min_to * 1000
+
+            biaya_inventory = calculate_inventory_cost(x, min_to)
 
             temp = {
-                'To': round(to),
+                'To': round(To),
                 's': round(s),
                 'S': round(S),
-                'nama_barang': nama_barang
+                'nama_barang': nama_barang,
+                'biaya_inventory': round(biaya_inventory),
+
+                # 'biaya_inventory_min': round(min(inventory_cost_list)),
+                # 'biaya_inventory_mean': round(np.mean(inventory_cost_list)),
+                # 'biaya_inventory_std': round(np.std(inventory_cost_list)),
             }
 
             data.append(temp)
