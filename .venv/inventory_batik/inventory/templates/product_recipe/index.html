@@ -59,9 +59,7 @@
                     <td class="text-right">{{ item.amount }} {{ item.material.unit }}</td>
                     <td class="text-right">Rp {{ item.material.price }}</td>
                     <td class="text-center">
-                        <a href="{% url 'product.update' item.id %}" class="btn btn-primary btn-sm"><i class="fa fa-file"></i></a>
-                        <a href="{% url 'product.update' item.id %}" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></a>
-                        <a href="{% url 'product.delete' item.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Apakah yakin akan menghapus item ini?')"><i class="fa fa-trash"></i></a>
+                        <a href="{% url 'product.recipe.delete' product_id=item.item_id material_id=item.material_id %}" class="btn btn-danger btn-sm" onclick="return confirm('Apakah yakin akan menghapus material ini?')"><i class="fa fa-trash"></i></a>
                     </td>
                 </tr>
                 {% endfor %}

@@ -53,6 +53,7 @@ urlpatterns = [
     # Product recipe
     path('product/recipe/<int:product_id>', product_recipe_view, name='product.recipe.index'),
     path('product/recipe/create/<int:product_id>', product_recipe_create_view, name='product.recipe.create'),
+    path('product/recipe/delete/<int:product_id>/<int:material_id>', product_recipe_delete_view, name='product.recipe.delete'),
 
     # Purchase
     path('purchase/', purchase_view, name='purchase.index'),

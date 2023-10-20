@@ -288,6 +288,15 @@ def product_recipe_create_view(request, product_id):
     # merender template form dengan memparsing data form
     return render(request, 'product_recipe/form.html', {'form': form, 'product_id': product_id})
 
+def product_recipe_delete_view(request, product_id, material_id):
+    try:
+        recipe = Recipe.objects.filter(item_id=product_id).filter(material_id=material_id)
+        recipe.delete()
+        messages.success(request, 'Sukses Menghapus Resep.')
+        return redirect('product.recipe.index', product_id)
+    except Recipe.DoesNotExist:
+        raise Http404("Resep tidak ditemukan.")
+
 # Purchase
 def purchase_view(request):
     if request.session.has_key('outlet_id'):
