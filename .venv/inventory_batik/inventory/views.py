@@ -882,14 +882,15 @@ def periodic_view(request):
                 alpha = to * biaya_simpan / biaya_kekurangan
                 z_alpha = round((NormalDist().inv_cdf(alpha) * -1), 2)
 
-                fz_alpha = round(norm.pdf(2.22 , loc = 0 , scale = 1 ), 5)
-                # wz_alpha = fz_alpha - (z_alpha * (1 - fz_alpha))
-                wz_alpha = round((fz_alpha - 0.00001), 5)
+                # fz_alpha = round(norm.pdf(2.22 , loc = 0 , scale = 1 ), 5)
+                fz_alpha = round(norm.pdf(z_alpha , loc = 0 , scale = 1 ), 5)
+                wz_alpha = fz_alpha - (z_alpha * (1 - fz_alpha))
+                # wz_alpha = round((fz_alpha - 0.00001), 5)
 
                 R = round((permintaan_baku * to) + (permintaan_baku * lead_time) + (z_alpha * (math.sqrt(to + lead_time))))
 
                 # Hitung total biaya total persediaan
-                N = math.ceil(standar_deviasi * ((math.sqrt(to + lead_time)) * ((fz_alpha - (z_alpha * wz_alpha)) * -1)))
+                N = math.ceil(standar_deviasi * ((math.sqrt(to + lead_time)) * ((fz_alpha - (z_alpha * wz_alpha)))))
 
                 T = (permintaan_baku * harga_material) + (biaya_pesan / to) + (biaya_simpan * (R - (permintaan_baku * lead_time) + (permintaan_baku * to / 2))) + (biaya_kekurangan / to * N)
 
@@ -898,7 +899,7 @@ def periodic_view(request):
                 XRL = (to + lead_time) * permintaan_baku
                 sigma_RL = (to + lead_time) * standar_deviasi
 
-                Qp = round(1.3 * (XR ** 0.494) * ((biaya_pesan / biaya_simpan) ** 0.506) * ((1 + ((sigma_RL ** 2) / (XR ** 2))) ** 0.116))
+                Qp = round(1.3 * (XR ** 0.494) * ((biaya_pesan / (harga_material * biaya_simpan)) ** 0.506) * ((1 + ((sigma_RL ** 2) / (XR ** 2))) ** 0.116))
                 z = math.sqrt((Qp * biaya_simpan) / (sigma_RL * biaya_kekurangan))
                 if z <= 0:
                     Sp = round((0.973 * XRL) + (sigma_RL * ((0.183 / 1) + 1.063 - (2.192 * z))), 2)
@@ -912,7 +913,8 @@ def periodic_view(request):
                 s = round(Sp)
                 S = round(Sp + Qp)
 
-                return s, S
+                temp = (permintaan_baku * harga_material) + (biaya_pesan / to)
+                return temp, s, S
             
             initial=[0,0]               # initial starting location [x1,x2...]
             bounds=[(-10,10),(-10,10)]  # input bounds [(x1_min,x1_max),(x2_min,x2_max)...]
@@ -920,17 +922,17 @@ def periodic_view(request):
             # s = PSO(func2,initial,bounds,num_particles=15,maxiter=30)
             # S = PSO(func3,initial,bounds,num_particles=15,maxiter=30)
 
-            s, S = find_ss(x)
-            To = min_to * 1000
+            biaya_inventory, s, S = find_ss(x)
+            To = min_to * 100
 
-            biaya_inventory = calculate_inventory_cost(x, min_to)
+            # biaya_inventory = calculate_inventory_cost(x, min_to)
 
             temp = {
                 'To': round(To),
                 's': round(s),
                 'S': round(S),
                 'nama_barang': nama_barang,
-                'biaya_inventory': round(biaya_inventory),
+                'biaya_inventory': (biaya_inventory),
 
                 # 'biaya_inventory_min': round(min(inventory_cost_list)),
                 # 'biaya_inventory_mean': round(np.mean(inventory_cost_list)),
